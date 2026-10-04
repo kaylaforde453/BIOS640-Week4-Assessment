@@ -1,0 +1,192 @@
+---
+title: "Week 3 Assessment"
+output: pdf_document
+---
+# Week 3 Assessment
+#Exercise 1
+
+```{r combined_graph}
+library(tidyverse)
+library(cowplot)
+library(ggpubr)
+
+nhanes <- read_csv("C:/Users/kayla/Downloads/cleaned_NHANES.csv")
+diet <- read_csv("C:/Users/kayla/Downloads/diet.csv")
+
+# Age distribution separated by gender
+age_gender_graph <- ggplot(nhanes, aes(x = age)) +
+  geom_histogram(binwidth = 5, boundary = 0) +
+  facet_wrap(~ gender) +
+  labs(
+    title = "Age Distribution by Gender",
+    x = "Age",
+    y = "Count"
+  )
+
+# Ethnicity graph showing gender proportions
+ethnicity_gender_graph <- ggplot(
+  nhanes,
+  aes(x = ethnicity_2, fill = gender)
+) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Gender Proportions by Ethnicity",
+    x = "Ethnicity",
+    y = "Proportion",
+    fill = "Gender"
+  )
+
+age_gender_graph
+ethnicity_gender_graph
+
+# Combine using cowplot
+combined_cowplot <- plot_grid(
+  age_gender_graph,
+  ethnicity_gender_graph,
+  labels = c("A", "B"),
+  ncol = 2
+)
+
+combined_cowplot
+
+# Combine using ggpubr
+combined_ggarrange <- ggarrange(
+  age_gender_graph,
+  ethnicity_gender_graph,
+  labels = c("A", "B"),
+  ncol = 2,
+  nrow = 1
+)
+
+combined_ggarrange
+```
+#I prefer ggarrange() because the syntax is straightforward and makes it easy to arrange and label multiple plots in one figure.
+#Exercise 2
+```{r age graph}
+# AGE GRAPH
+age_graph <- ggplot(nhanes, aes(x = age)) +
+  geom_histogram(binwidth = 5, boundary = 0) +
+  labs(
+    title = "Distribution of Age",
+    x = "Age",
+    y = "Count"
+  )
+
+age_graph
+
+# GENDER GRAPH
+gender_graph <- ggplot(nhanes, aes(x = gender)) +
+  geom_bar() +
+  labs(
+    title = "Distribution of Gender",
+    x = "Gender",
+    y = "Count"
+  )
+
+gender_graph
+
+# ETHNICITY 1 GRAPH
+ethnicity1_graph <- ggplot(nhanes, aes(x = ethnicity_1)) +
+  geom_bar() +
+  labs(
+    title = "Distribution of Ethnicity 1",
+    x = "Ethnicity",
+    y = "Count"
+  )
+
+ethnicity1_graph
+
+# ETHNICITY 2 GRAPH
+ethnicity2_graph <- ggplot(nhanes, aes(x = ethnicity_2)) +
+  geom_bar() +
+  labs(
+    title = "Distribution of Ethnicity 2",
+    x = "Ethnicity",
+    y = "Count"
+  )
+
+ethnicity2_graph
+
+# Missing values
+sum(is.na(nhanes$age))
+sum(is.na(nhanes$gender))
+sum(is.na(nhanes$ethnicity_1))
+sum(is.na(nhanes$ethnicity_2))
+
+# Compare ethnicity categories
+table(nhanes$ethnicity_1)
+table(nhanes$ethnicity_2)
+
+# Save graphs
+ggsave("age_graph.png", plot = age_graph)
+ggsave("gender_graph.png", plot = gender_graph)
+ggsave("ethnicity1_graph.png", plot = ethnicity1_graph)
+ggsave("ethnicity2_graph.png", plot = ethnicity2_graph)
+
+# Remove ethnicity_1
+nhanes <- nhanes %>%
+  select(-ethnicity_1)
+
+names(nhanes)
+```
+
+#I chose to keep ethnicity_2 because it provides more detailed ethnicity categories by identifying Asian participants separately. ethnicity_1 groups those participants into the broader “Other” category, so ethnicity_2 preserves more information.
+
+
+
+#Exercise 3
+```{r diet_change}
+
+diet_change <- diet %>%
+  group_by(Participant) %>%
+  mutate(
+    starting_weight = Weight[match(0, Week)],
+    weight_change = Weight - starting_weight
+  ) %>%
+  ungroup()
+
+weight_change_graph <- ggplot(
+  diet_change,
+  aes(x = Week, y = weight_change, group = Participant)
+) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Weight Change Over Time",
+    x = "Week",
+    y = "Change From Starting Weight"
+  )
+
+weight_change_graph
+```
+#This graph is easier to understand because it shows how much each participant’s weight changed from their own starting weight rather than comparing their actual body weights. This makes the direction and amount of weight change easier to see.
+
+
+
+
+#Exercise 4
+
+```{r bp_data}
+
+bp_data <- nhanes %>%
+  mutate(
+    avg_systolic_bp = rowMeans(
+      across(c(systolic_bp_1, systolic_bp_2, systolic_bp_3, systolic_bp_4)),
+      na.rm = TRUE
+    ),
+    avg_diastolic_bp = rowMeans(
+      across(c(diastolic_bp_1, diastolic_bp_2, diastolic_bp_3, diastolic_bp_4)),
+      na.rm = TRUE
+    ),
+    avg_systolic_bp = ifelse(is.nan(avg_systolic_bp), NA, avg_systolic_bp),
+    avg_diastolic_bp = ifelse(is.nan(avg_diastolic_bp), NA, avg_diastolic_bp)
+  ) %>%
+  select(
+    patient_id,
+    age,
+    gender,
+    avg_systolic_bp,
+    avg_diastolic_bp
+  )
+
+head(bp_data)
