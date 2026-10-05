@@ -11,6 +11,3 @@ This repository contains the files for the Week 4 assessment for BIOS 640: Intro
 ## Reproducibility
 
 All analyses use relative file paths so the project can be reproduced after cloning the repository.
-## Reproducibility
-
-All analyses use relative file paths so the project can be reproduced after cloning the repository.
